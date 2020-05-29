@@ -6,6 +6,7 @@ const auth = require("../../middleware/auth");
 const { check, validationResult } = require("express-validator");
 const Profile = require("../../models/Profile");
 const User = require("../../models/User");
+const Post = require("../../models/Post");
 
 // @route GET api/profile/me
 // *Get current users profile
@@ -28,7 +29,7 @@ router.get("/me", auth, async (req, res) => {
 });
 
 // @route POST api/profile
-// Create of update user profile
+// Create or update user profile
 // Private
 router.post(
   "/",
@@ -75,16 +76,20 @@ router.post(
     if (status) profileFields.status = status;
     if (githubusername) profileFields.githubusername = githubusername;
     if (skills) {
-      profileFields.skills = skills.split(",").map(skill => skill.trim());
+      Array.isArray(skills)
+        ? skills
+        : (profileFields.skills = skills
+            .split(",")
+            .map(skill => " " + skill.trim()));
     }
 
     // build social object
     profileFields.social = {};
-    if (twitter) profileFields.twitter = twitter;
-    if (youtube) profileFields.youtube = youtube;
-    if (facebook) profileFields.facebook = facebook;
-    if (linkedin) profileFields.linkedin = linkedin;
-    if (instagram) profileFields.instagram = instagram;
+    if (twitter) profileFields.social.twitter = twitter;
+    if (youtube) profileFields.social.youtube = youtube;
+    if (facebook) profileFields.social.facebook = facebook;
+    if (linkedin) profileFields.social.linkedin = linkedin;
+    if (instagram) profileFields.social.instagram = instagram;
 
     try {
       // request user id and set to profile variable
@@ -151,8 +156,8 @@ router.get("/user/:user_id", async (req, res) => {
 // access: Private
 router.delete("/", auth, async (req, res) => {
   try {
-    // todo ... remove users posts
-
+    // Remove users posts
+    await Post.deleteMany({ user: req.user.id });
     // Remove Profile
     await Profile.findOneAndRemove({ user: req.user.id });
     // Remove User
@@ -327,19 +332,22 @@ router.delete("/education/:edu_id", auth, async (req, res) => {
 router.get("/github/:username", (req, res) => {
   try {
     const options = {
-      uri: `https://api.github.com/users/${
-        req.params.username
-      }/repos?per_page=5&sort=created:asc&client_id=${config.get(
-        "githubClientId"
-      )}&client_secret=${config.get("githubSecret")}`,
+      uri: encodeURI(
+        `https://api.github.com/users/${
+          req.params.username
+        }/repos?per_page=5&sort=created:asc&client_id=${config.get(
+          "githubClientId"
+        )}&client_secret=${config.get("githubSecret")}`
+      ),
       method: "GET",
       headers: { "user-agent": "node.js" }
     };
+
     request(options, (error, response, body) => {
       if (error) console.error(error);
 
       if (response.statusCode !== 200) {
-        res.status(404).json({ msg: "No Github profile found" });
+        return res.status(404).json({ msg: "No Github profile found" });
       }
 
       res.json(JSON.parse(body));
