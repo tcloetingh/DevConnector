@@ -12,13 +12,14 @@ import { getProfileById } from "../../actions/profile";
 
 const Profile = ({
   getProfileById,
-  match,
   profile: { profile, loading },
-  auth
+  auth,
+  match
 }) => {
   useEffect(() => {
     getProfileById(match.params.id);
   }, [getProfileById, match.params.id]);
+
   return (
     <Fragment>
       {profile === null || loading ? (
@@ -42,24 +43,31 @@ const Profile = ({
               <h2 className="text-primary">Experience</h2>
               {profile.experience.length > 0 ? (
                 <Fragment>
-                  {profile.experience.map(exp => (
-                    <ProfileExperience key={exp._id} experience={exp} />
+                  {profile.experience.map(experience => (
+                    <ProfileExperience
+                      key={experience._id}
+                      experience={experience}
+                    />
                   ))}
                 </Fragment>
               ) : (
-                <h4>No Experience Credentials</h4>
+                <h4>No experience credentials</h4>
               )}
             </div>
+
             <div className="profile-edu bg-white p-2">
               <h2 className="text-primary">Education</h2>
-              {profile.experience.length > 0 ? (
+              {profile.education.length > 0 ? (
                 <Fragment>
-                  {profile.experience.map(edu => (
-                    <ProfileEducation key={edu._id} education={edu} />
+                  {profile.education.map(education => (
+                    <ProfileEducation
+                      key={education._id}
+                      education={education}
+                    />
                   ))}
                 </Fragment>
               ) : (
-                <h4>No Education Credentials</h4>
+                <h4>No education credentials</h4>
               )}
             </div>
 
